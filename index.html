@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>interactive</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .game-container {
+            text-align: center;
+        }
+        #game-canvas {
+            border: 2px solid #444;
+            background-color: #000;
+            margin-bottom: 20px;
+        }
+        .instructions {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .key-pressed {
+            font-size: 24px;
+            height: 30px;
+            margin-bottom: 10px;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        .image-gallery {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .image-option {
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s, transform 0.1s;
+        }
+        .image-option:hover {
+            border-color: #888;
+        }
+        .image-option.selected {
+            border-color: #4CAF50;
+        }
+        .image-option:active {
+            transform: scale(0.95);
+        }
+        .status-message {
+            height: 20px;
+            margin-bottom: 10px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        .queue-info {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #FFA500;
+            font-weight: bold;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            display: none;
+        }
+        .timer {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #4CAF50;
+            display: none;
+        }
+        .waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+        }
+        .waiting-overlay h2 {
+            color: #FFA500;
+            margin-bottom: 20px;
+        }
+        .client-id {
+            position: fixed;
+            bottom: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: #555;
+        }
+        .server-info {
+            position: fixed;
+            bottom: 5px;
+            left: 10px;
+            font-size: 10px;
+            color: #555;
+        }
+        .total-queue {
+            font-size: 16px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .controls-container {
+            margin-top: 20px;
+            border-top: 1px solid #444;
+            padding-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .control-group {
+            text-align: center;
+        }
+        .control-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        .key-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        .key {
+            width: 50px;
+            height: 50px;
+            background-color: #333;
+            color: white;
+            border: 2px solid #555;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin: 0 5px;
+            box-shadow: 0 3px 0 #222;
+        }
+        .key.active {
+            background-color: #4CAF50;
+            transform: translateY(3px);
+            box-shadow: 0 0 0 #222;
+        }
+        .key-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        .arrow-keys {
+            position: relative;
+            height: 165px;
+            width: 165px;
+        }
+        .spacer {
+            width: 50px;
+            height: 50px;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="queue-info" id="queue-info">
+            Waiting in queue: Position <span id="queue-position">0</span>
+            <div class="total-queue" id="total-queue"></div>
+        </div>
+        <div class="timer" id="timer">Time remaining: <span id="time-remaining">60</span> seconds</div>
+        <div class="image-gallery" id="image-gallery">
+            <!-- Images will be added here via JavaScript -->
+        </div>
+        <div class="status-message" id="status-message"></div>
+        <div class="key-pressed" id="key-display"></div>
+        <canvas id="game-canvas" width="512" height="512"></canvas>
+        <div class="loading" id="loading-indicator">Generating...</div>
+        
+        <div class="controls-container">
+            <div class="control-group">
+                <div class="control-title">Movement</div>
+                <div class="arrow-keys">
+                    <div class="key-row">
+                        <div class="spacer"></div>
+                        <div class="key" id="key-up">↑</div>
+                        <div class="spacer"></div>
+                    </div>
+                    <div class="key-row">
+                        <div class="key" id="key-left">←</div>
+                        <div class="spacer"></div>
+                        <div class="key" id="key-right">→</div>
+                    </div>
+                    <div class="key-row">
+                        <div class="spacer"></div>
+                        <div class="key" id="key-down">↓</div>
+                        <div class="spacer"></div>
+                    </div>
+                </div>
+                <div class="key-label">Arrow Keys: Move</div>
+            </div>
+            
+            <div class="control-group">
+                <div class="control-title">Forward/Backward</div>
+                <div class="key-row">
+                    <div class="key" id="key-i">I</div>
+                    <div class="key" id="key-o">O</div>
+                </div>
+                <div class="key-label">I: Forward, O: Backward</div>
+            </div>
+            
+            <div class="control-group">
+                <div class="control-title">Gripper</div>
+                <div class="key-row">
+                    <div class="key" id="key-open">[</div>
+                    <div class="key" id="key-close">]</div>
+                </div>
+                <div class="key-label">[: Open, ]: Close</div>
+            </div>
+        </div>
+    </div>
+    <div class="client-id" id="client-id"></div>
+    <div class="server-info" id="server-info"></div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const keyDisplay = document.getElementById('key-display');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const imageGallery = document.getElementById('image-gallery');
+        const statusMessage = document.getElementById('status-message');
+        const queueInfo = document.getElementById('queue-info');
+        const queuePosition = document.getElementById('queue-position');
+        const totalQueue = document.getElementById('total-queue');
+        const timer = document.getElementById('timer');
+        const timeRemaining = document.getElementById('time-remaining');
+        const clientIdDisplay = document.getElementById('client-id');
+        const serverInfo = document.getElementById('server-info');
+        
+        // URL for coordinator server (central queue manager)
+        const COORDINATOR_URL = 'ws://localhost:8700';  // Updated to match coordinator's client port
+        
+        let isActivePlayer = false;
+        let countdownInterval = null;
+        let secondsLeft = 60;
+        let clientId = null;
+        let heartbeatInterval = null;
+        let socket = null;
+        
+        // Function to send heartbeat to the server
+        function startHeartbeat() {
+            // Clear any existing interval
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            // Send heartbeat every 2 seconds
+            heartbeatInterval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        type: 'heartbeat'
+                    }));
+                    console.log("Heartbeat sent");
+                } else {
+                    // If socket is closed, stop sending heartbeats
+                    clearInterval(heartbeatInterval);
+                }
+            }, 2000);
+        }
+        
+        // Handle page unload/refresh events
+        window.addEventListener('beforeunload', function() {
+            // Clear heartbeat interval
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            // Close WebSocket connection before page unload
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        });
+        
+        // Initial frame rendering
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Function to start countdown timer
+        function startCountdown(seconds) {
+            clearInterval(countdownInterval);
+            secondsLeft = seconds;
+            timeRemaining.textContent = secondsLeft;
+            timer.style.display = 'block';
+            
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                timeRemaining.textContent = secondsLeft;
+                
+                if (secondsLeft <= 10) {
+                    timer.style.color = '#FF4500'; // Change color when close to timeout
+                }
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+        
+        // Function to stop countdown timer
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            timer.style.display = 'none';
+            timer.style.color = '#4CAF50'; // Reset color
+        }
+        
+        // Function to update the image gallery with new images
+        function updateImageGallery(imageList) {
+            // Clear existing images
+            imageGallery.innerHTML = '';
+            
+            // Add new images
+            imageList.forEach(imagePath => {
+                const imgElement = document.createElement('img');
+                
+                imgElement.src = imagePath;
+                imgElement.className = 'image-option';
+                imgElement.alt = `Image`;
+                imgElement.dataset.path = imagePath;
+                
+                // Add click event handler
+                imgElement.addEventListener('click', function() {
+                    // Only active player can select images
+                    if (!isActivePlayer) {
+                        statusMessage.textContent = "Please wait for your turn to select an image";
+                        return;
+                    }
+                    
+                    // Remove selected class from all images
+                    document.querySelectorAll('.image-option').forEach(img => {
+                        img.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to clicked image
+                    this.classList.add('selected');
+                    
+                    const path = this.dataset.path;
+                    statusMessage.textContent = `Selected: ${path}`;
+                    
+                    // Show loading indicator
+                    loadingIndicator.style.display = 'block';
+                    
+                    // Send the image selection to the server
+                    socket.send(JSON.stringify({
+                        type: 'image_selection',
+                        path: path
+                    }));
+                });
+                
+                imageGallery.appendChild(imgElement);
+            });
+        }
+        
+        // Connect to coordinator server and set up event handlers
+        function connectToCoordinator() {
+            socket = new WebSocket(COORDINATOR_URL);
+            
+            // Set up event handlers
+            socket.addEventListener('open', () => {
+                console.log('Connected to coordinator server');
+                statusMessage.textContent = 'Connected to server. Waiting for assignment...';
+                
+                // Start sending heartbeats
+                startHeartbeat();
+            });
+            
+            socket.addEventListener('message', (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+                
+                switch(data.type) {
+                    case 'info':
+                        // Display information message
+                        statusMessage.textContent = data.message;
+                        
+                        // Check if it's our turn now
+                        if (data.message.includes("Your turn")) {
+                            isActivePlayer = true;
+                            queueInfo.style.display = 'none';
+                            startCountdown(60);
+                        }
+                        
+                        // Check if time is up
+                        if (data.message.includes("time is up")) {
+                            isActivePlayer = false;
+                            stopCountdown();
+                        }
+                        break;
+                        
+                    case 'client_id':
+                        // Store client ID
+                        clientId = data.id;
+                        clientIdDisplay.textContent = `Client ID: ${clientId}`;
+                        break;
+                        
+                    case 'queue_position':
+                        // Update queue position display
+                        isActivePlayer = false;
+                        queueInfo.style.display = 'block';
+                        queuePosition.textContent = data.position;
+                        if (data.total_in_queue) {
+                            totalQueue.textContent = `Total waiting: ${data.total_in_queue}`;
+                        }
+                        stopCountdown();
+                        break;
+                        
+                    case 'frame':
+                        // Display new frame
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            loadingIndicator.style.display = 'none';
+                        };
+                        img.src = 'data:image/png;base64,' + data.frame;
+                        break;
+                        
+                    case 'image_selection_options':
+                        // Update image gallery with new options
+                        updateImageGallery(data.images);
+                        break;
+                        
+                    case 'backend_assigned':
+                        // We're now assigned to a backend (through the coordinator)
+                        serverInfo.textContent = `Server: ${data.backend_name}`;
+                        isActivePlayer = true;
+                        queueInfo.style.display = 'none';
+                        break;
+                }
+            });
+            
+            socket.addEventListener('close', () => {
+                console.log('Disconnected from server');
+                isActivePlayer = false;
+                stopCountdown();
+                
+                // Clear heartbeat interval
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                }
+                
+                statusMessage.textContent = 'Connection closed. Please refresh to reconnect.';
+            });
+            
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+                statusMessage.textContent = 'Connection error. Check console for details.';
+            });
+        }
+        
+        // Connect to the coordinator on page load
+        connectToCoordinator();
+        
+        // Handle keypress events
+        document.addEventListener('keydown', (event) => {
+            // Only process if connection is open and is active player
+            if (socket && socket.readyState === WebSocket.OPEN && isActivePlayer) {
+                const key = event.key;
+                keyDisplay.textContent = `Key pressed: ${key}`;
+                
+                // Add visual feedback for pressed key
+                highlightKey(key);
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'block';
+                
+                // Send the keypress to the server
+                socket.send(JSON.stringify({
+                    type: 'keypress',
+                    key: key
+                }));
+            } else if (socket && socket.readyState === WebSocket.OPEN && !isActivePlayer) {
+                // Remind user they're not the active player
+                statusMessage.textContent = "Please wait for your turn to play";
+            }
+        });
+        
+        // Function to highlight pressed key
+        function highlightKey(key) {
+            let keyElement = null;
+            
+            // Find the corresponding key element
+            switch(key) {
+                case 'ArrowUp':
+                    keyElement = document.getElementById('key-up');
+                    break;
+                case 'ArrowDown':
+                    keyElement = document.getElementById('key-down');
+                    break;
+                case 'ArrowLeft':
+                    keyElement = document.getElementById('key-left');
+                    break;
+                case 'ArrowRight':
+                    keyElement = document.getElementById('key-right');
+                    break;
+                case 'i':
+                case 'I':
+                    keyElement = document.getElementById('key-i');
+                    break;
+                case 'o':
+                case 'O':
+                    keyElement = document.getElementById('key-o');
+                    break;
+                case '[':
+                    keyElement = document.getElementById('key-open');
+                    break;
+                case ']':
+                    keyElement = document.getElementById('key-close');
+                    break;
+            }
+            
+            // Add active class to highlight the key
+            if (keyElement) {
+                keyElement.classList.add('active');
+                
+                // Remove the active class after a short delay
+                setTimeout(() => {
+                    keyElement.classList.remove('active');
+                }, 200);
+            }
+        }
+    </script>
+</body>
+</html>

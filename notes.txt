@@ -1,0 +1,16 @@
+Hello
+This is Julian
+I would like to write a websocket application
+
+
+
+Basically it's the Connect4 game from the websockets guide
+There is a server, coordinator_server, that receives messages,
+and handles them, for example adding the user to a global mapping between
+users and backend servers.
+
+The coordinator_server feels very familiar so classic websocket servers.
+But the backend is also websocket based.
+
+I think it's possible to have two servers which communicate with each
+other. One server is a client to another.
