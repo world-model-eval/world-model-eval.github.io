@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluating Robot Policies in a World Model</title>
+    <style>
+        :root {
+            /* Dark mode colors (default) */
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-primary: #4CAF50;
+            --accent-secondary: #45a049;
+            --accent-tertiary: #3d8b40;
+            --border-color: #404040;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --warning-color: #FFA500;
+            --error-color: #f44336;
+            --accent-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                /* Light mode colors */
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #e0e0e0;
+                --text-primary: #212121;
+                --text-secondary: #757575;
+                --accent-primary: #4CAF50;
+                --accent-secondary: #45a049;
+                --accent-tertiary: #3d8b40;
+                --border-color: #d0d0d0;
+                --shadow-color: rgba(0, 0, 0, 0.1);
+                --warning-color: #FF8F00;
+                --error-color: #d32f2f;
+                --accent-text: #ffffff;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .game-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .game-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+        }
+        
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        #game-canvas {
+            border: 3px solid var(--border-color);
+            background-color: var(--bg-tertiary);
+            border-radius: 12px;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .instructions {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        
+        .key-pressed {
+            font-size: 24px;
+            height: 30px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: var(--text-primary);
+            background: rgba(30, 30, 30, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: none;
+            border: 1px solid rgba(64, 64, 64, 0.5);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--text-primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 6px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .image-gallery {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .more-scenes-btn {
+            width: 80px;
+            height: 80px;
+            background: #333333;
+            color: #eeeeee;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .more-scenes-btn:hover {
+            background: #555555;
+        }
+        
+        .more-scenes-btn:active {
+            background: #555555;
+        }
+        
+        .more-scenes-btn:disabled {
+            background: #555555;
+            cursor: not-allowed;
+        }
+        
+        .image-option {
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            transition: border-color 0.3s ease;
+            object-fit: cover;
+        }
+        
+        .image-option:hover {
+            border-color: var(--text-secondary);
+        }
+        
+        .image-option.selected {
+            border-color: var(--text-primary);
+        }
+        
+        .status-message {
+            height: 20px;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .queue-info {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--warning-color);
+            font-weight: bold;
+            padding: 15px 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--warning-color);
+            display: none;
+            transition: all 0.3s ease;
+        }
+        
+        .timer {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            display: none;
+            font-weight: bold;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .waiting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+            transition: background-color 0.3s ease;
+        }
+        
+        .waiting-overlay h2 {
+            color: var(--warning-color);
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        .client-id {
+            position: fixed;
+            bottom: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .server-info {
+            position: fixed;
+            bottom: 5px;
+            left: 10px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            font-weight: 500;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        
+        .nav-button:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .total-queue {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            transition: color 0.3s ease;
+        }
+        
+        .controls-container {
+            margin-top: 15px;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            transition: all 0.3s ease;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-title {
+            font-weight: bold;
+            color: var(--text-primary);
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            margin-right: 5px;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+        
+        .key-row {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .key {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        
+        /* Wider buttons for gripper controls with labels */
+        #key-open, #key-close {
+            width: 80px;
+            font-size: 10px;
+        }
+        
+        .key:hover {
+            background: var(--bg-primary);
+        }
+        
+        .key.active {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+            color: var(--bg-primary);
+        }
+        
+        .key-label {
+            display: none; /* Hide labels in compact mode */
+        }
+        
+        .arrow-keys {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .arrow-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            width: 102px;
+            height: 66px;
+        }
+        
+        .arrow-group .key:nth-child(1) { grid-column: 2; grid-row: 1; } /* Up */
+        .arrow-group .key:nth-child(2) { grid-column: 1; grid-row: 2; } /* Left */
+        .arrow-group .key:nth-child(3) { grid-column: 3; grid-row: 2; } /* Right */
+        .arrow-group .key:nth-child(4) { grid-column: 2; grid-row: 2; } /* Down */
+        
+        .spacer {
+            display: none; /* Remove spacers in compact mode */
+        }
+        
+
+        
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .game-container {
+                padding: 10px;
+            }
+            
+            #game-canvas {
+                max-width: calc(100vw - 26px); /* Account for container padding (20px) + border (6px) */
+            }
+            
+            .controls-container {
+                gap: 20px;
+            }
+            
+            .key {
+                width: 45px;
+                height: 45px;
+                margin: 0 3px;
+            }
+            
+            /* Keep gripper buttons wider even on mobile */
+            #key-open, #key-close {
+                width: 100px;
+                font-size: 9px;
+            }
+            
+            .arrow-keys {
+                height: 145px;
+                width: 145px;
+            }
+            
+            .spacer {
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- <h1 class="game-title">Neural World Model</h1> -->
+        
+        <div class="queue-info" id="queue-info">
+            Waiting in queue: Position <span id="queue-position">0</span>
+            <div class="total-queue" id="total-queue"></div>
+        </div>
+        <div class="timer" id="timer">Time remaining: <span id="time-remaining">60</span> seconds</div>
+        <a href="abstract.html" class="nav-button">📄 View Paper Abstract</a>
+        <div class="image-gallery" id="image-gallery">
+            <!-- Images will be added here via JavaScript -->
+            <button class="more-scenes-btn" id="more-scenes-btn">more scenes️</button>
+        </div>
+        
+        
+        <div class="status-message" id="status-message"></div>
+        <div class="key-pressed" id="key-display" style="display: none;"></div>
+        <div class="canvas-container">
+            <canvas id="game-canvas" width="512" height="512"></canvas>
+            <div class="loading" id="loading-indicator">Generating</div>
+        </div>
+        
+        <div class="controls-container">
+            <div class="control-group">
+                <div class="control-title">Move</div>
+                <div class="arrow-keys">
+                    <div class="arrow-group">
+                        <div class="key" id="key-up">↑</div>
+                        <div class="key" id="key-left">←</div>
+                        <div class="key" id="key-right">→</div>
+                        <div class="key" id="key-down">↓</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="control-title">Depth</div>
+                <div class="key-row">
+                    <div class="key" id="key-i">I</div>
+                    <div class="key" id="key-o">O</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="control-title">Grip</div>
+                <div class="key-row">
+                    <div class="key" id="key-open">[ (close)</div>
+                    <div class="key" id="key-close">] (open)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="client-id" id="client-id"></div>
+    <div class="server-info" id="server-info"></div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const keyDisplay = document.getElementById('key-display');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const imageGallery = document.getElementById('image-gallery');
+        const statusMessage = document.getElementById('status-message');
+        const queueInfo = document.getElementById('queue-info');
+        const queuePosition = document.getElementById('queue-position');
+        const totalQueue = document.getElementById('total-queue');
+        const timer = document.getElementById('timer');
+        const timeRemaining = document.getElementById('time-remaining');
+        const clientIdDisplay = document.getElementById('client-id');
+        const serverInfo = document.getElementById('server-info');
+        const moreScenesBtn = document.getElementById('more-scenes-btn');
+        
+        // URL for coordinator server (central queue manager)
+        const COORDINATOR_URL = 'wss://tiny-world-model.fly.dev:8700';  // Updated to match coordinator's client port
+        // const COORDINATOR_URL = 'ws://localhost:8700';  // Updated to match coordinator's client port
+        
+        let isActivePlayer = false;
+        let countdownInterval = null;
+        let secondsLeft = 60;
+        let clientId = null;
+        let heartbeatInterval = null;
+        let socket = null;
+        
+        // Game control keys that should not scroll the page
+        const gameKeys = new Set([
+            'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+            'i', 'I', 'o', 'O', '[', ']'
+        ]);
+        
+        // Function to send heartbeat to the server
+        function startHeartbeat() {
+            // Clear any existing interval
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            // Send heartbeat every 2 seconds
+            heartbeatInterval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        type: 'heartbeat'
+                    }));
+                    console.log("Heartbeat sent");
+                } else {
+                    // If socket is closed, stop sending heartbeats
+                    clearInterval(heartbeatInterval);
+                }
+            }, 2000);
+        }
+        
+        // Handle page unload/refresh events
+        window.addEventListener('beforeunload', function() {
+            // Clear heartbeat interval
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            // Close WebSocket connection before page unload
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        });
+        
+        // Initial frame rendering
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Initialize connection status
+        updateConnectionStatus(false);
+        
+        // Function to start countdown timer
+        function startCountdown(seconds) {
+            clearInterval(countdownInterval);
+            secondsLeft = seconds;
+            timeRemaining.textContent = secondsLeft;
+            
+            // Only show timer when 1 minute (60 seconds) or less remaining
+            if (secondsLeft <= 60) {
+                timer.style.display = 'block';
+            } else {
+                timer.style.display = 'none';
+            }
+            
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                timeRemaining.textContent = secondsLeft;
+                
+                // Show timer when 1 minute or less remaining
+                if (secondsLeft <= 60 && timer.style.display === 'none') {
+                    timer.style.display = 'block';
+                }
+                
+                // Change color when 10 seconds remaining
+                if (secondsLeft <= 10) {
+                    timer.style.color = 'var(--error-color)'; // Change color when close to timeout
+                }
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+        
+        // Function to stop countdown timer
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            timer.style.display = 'none';
+            timer.style.color = 'var(--text-primary)'; // Reset color
+        }
+        
+        // Function to update connection status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                if (serverInfo.textContent.includes('Server:')) {
+                    // Keep existing server info if present
+                    const serverName = serverInfo.textContent.split('Server: ')[1];
+                    serverInfo.textContent = `Server: ${serverName}`;
+                } else {
+                    serverInfo.textContent = 'Connected';
+                }
+                serverInfo.style.color = 'var(--text-secondary)';
+            } else {
+                serverInfo.textContent = 'Disconnected';
+                serverInfo.style.color = 'var(--error-color)';
+            }
+        }
+        
+        // Function to update the image gallery with new images
+        function updateImageGallery(imageList) {
+            // Clear existing images
+            imageGallery.innerHTML = '';
+            
+            // Add new images
+            imageList.forEach(imagePath => {
+                const imgElement = document.createElement('img');
+                
+                imgElement.src = imagePath;
+                imgElement.className = 'image-option';
+                imgElement.alt = `Image`;
+                imgElement.dataset.path = imagePath;
+                
+                // Add click event handler
+                imgElement.addEventListener('click', function() {
+                    // Only active player can select images
+                    if (!isActivePlayer) {
+                        statusMessage.textContent = "Please wait for your turn to select an image";
+                        return;
+                    }
+                    
+                    // Remove selected class from all images
+                    document.querySelectorAll('.image-option').forEach(img => {
+                        img.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to clicked image
+                    this.classList.add('selected');
+                    
+                    const path = this.dataset.path;
+                    statusMessage.textContent = `Selected: ${path}`;
+                    
+                    // Show loading indicator
+                    loadingIndicator.style.display = 'block';
+                    
+                    // Send the image selection to the server
+                    socket.send(JSON.stringify({
+                        type: 'image_selection',
+                        path: path
+                    }));
+                });
+                
+                imageGallery.appendChild(imgElement);
+            });
+            
+            // Re-add the "More Scenes" button to the gallery
+            imageGallery.appendChild(moreScenesBtn);
+        }
+        
+        // Connect to coordinator server and set up event handlers
+        function connectToCoordinator() {
+            socket = new WebSocket(COORDINATOR_URL);
+            
+            // Set up event handlers
+            socket.addEventListener('open', () => {
+                console.log('Connected to coordinator server');
+                statusMessage.textContent = 'Connected to server. Waiting for assignment...';
+                updateConnectionStatus(true);
+                
+                // Start sending heartbeats
+                startHeartbeat();
+            });
+            
+            socket.addEventListener('message', (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+                
+                switch(data.type) {
+                    case 'info':
+                        // Display information message
+                        statusMessage.textContent = data.message;
+                        
+                        // Check if it's our turn now
+                        if (data.message.includes("Your turn")) {
+                            isActivePlayer = true;
+                            queueInfo.style.display = 'none';
+                            moreScenesBtn.style.display = 'block';
+                            startCountdown(300); // 5 minutes = 300 seconds
+                        }
+                        
+                        // Check if time is up
+                        if (data.message.includes("time is up")) {
+                            isActivePlayer = false;
+                            moreScenesBtn.style.display = 'none';
+                            stopCountdown();
+                        }
+                        break;
+                        
+                    case 'user_id':
+                        // Store client ID
+                        clientId = data.id;
+                        clientIdDisplay.textContent = `Client ID: ${clientId}`;
+                        break;
+                        
+                    case 'queue_position':
+                        // Update queue position display
+                        isActivePlayer = false;
+                        queueInfo.style.display = 'block';
+                        moreScenesBtn.style.display = 'none';
+                        queuePosition.textContent = data.position;
+                        if (data.total_in_queue) {
+                            totalQueue.textContent = `Total waiting: ${data.total_in_queue}`;
+                        }
+                        stopCountdown();
+                        break;
+                        
+                    case 'frame':
+                        // Display new frame
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            loadingIndicator.style.display = 'none';
+                        };
+                        img.src = 'data:image/png;base64,' + data.frame;
+                        break;
+                        
+                    case 'image_selection_options':
+                        // Update image gallery with new options
+                        updateImageGallery(data.images);
+                        break;
+                        
+                    case 'backend_assigned':
+                        // We're now assigned to a backend (through the coordinator)
+                        serverInfo.textContent = `Server: ${data.backend_name}`;
+                        serverInfo.style.color = 'var(--text-secondary)';
+                        isActivePlayer = true;
+                        queueInfo.style.display = 'none';
+                        moreScenesBtn.style.display = 'block';
+                        break;
+                }
+            });
+            
+            socket.addEventListener('close', () => {
+                console.log('Disconnected from server');
+                isActivePlayer = false;
+                stopCountdown();
+                updateConnectionStatus(false);
+                
+                // Clear heartbeat interval
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                }
+                
+                statusMessage.textContent = 'Connection closed. Please refresh to reconnect.';
+            });
+            
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+                statusMessage.textContent = 'Connection error. Check console for details.';
+                updateConnectionStatus(false);
+            });
+        }
+        
+        // Connect to the coordinator on page load
+        connectToCoordinator();
+        
+        // Handle keypress events with prevention of default scrolling behavior
+        document.addEventListener('keydown', (event) => {
+            let key = event.key;
+            
+            // Prevent default behavior for game control keys to stop page scrolling
+            if (gameKeys.has(key)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            // Only process if connection is open and is active player
+            if (socket && socket.readyState === WebSocket.OPEN && isActivePlayer) {
+                // Only handle game control keys
+                if (gameKeys.has(key)) {
+                    keyDisplay.textContent = `Key pressed: ${key}`;
+                    
+                    // Add visual feedback for pressed key
+                    highlightKey(key);
+                    
+                    // Show loading indicator
+                    loadingIndicator.style.display = 'block';
+
+                    if (key == ']') {
+                        key = '[';
+                    } else if (key == '[') {
+                        key = ']';
+                    }
+                    // Send the keypress to the server
+                    socket.send(JSON.stringify({
+                        type: 'keypress',
+                        key: key
+                    }));
+                }
+            } else if (socket && socket.readyState === WebSocket.OPEN && !isActivePlayer && gameKeys.has(key)) {
+                // Remind user they're not the active player
+                statusMessage.textContent = "Please wait for your turn to play";
+            }
+        });
+        
+        // Also handle keyup events to remove visual feedback
+        document.addEventListener('keyup', (event) => {
+            const key = event.key;
+            
+            // Prevent default behavior for game control keys
+            if (gameKeys.has(key)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+        
+        // Function to highlight pressed key
+        function highlightKey(key) {
+            let keyElement = null;
+            
+            // Find the corresponding key element
+            switch(key) {
+                case 'ArrowUp':
+                    keyElement = document.getElementById('key-up');
+                    break;
+                case 'ArrowDown':
+                    keyElement = document.getElementById('key-down');
+                    break;
+                case 'ArrowLeft':
+                    keyElement = document.getElementById('key-left');
+                    break;
+                case 'ArrowRight':
+                    keyElement = document.getElementById('key-right');
+                    break;
+                case 'i':
+                case 'I':
+                    keyElement = document.getElementById('key-i');
+                    break;
+                case 'o':
+                case 'O':
+                    keyElement = document.getElementById('key-o');
+                    break;
+                case '[':
+                    keyElement = document.getElementById('key-open');
+                    break;
+                case ']':
+                    keyElement = document.getElementById('key-close');
+                    break;
+            }
+            
+            // Add active class to highlight the key
+            if (keyElement) {
+                keyElement.classList.add('active');
+                
+                // Remove the active class after a short delay
+                setTimeout(() => {
+                    keyElement.classList.remove('active');
+                }, 200);
+            }
+        }
+        
+        // Add click handlers to visual keys for touch/mouse interaction
+        document.querySelectorAll('.key').forEach(keyElement => {
+            keyElement.addEventListener('click', () => {
+                if (!isActivePlayer) {
+                    statusMessage.textContent = "Please wait for your turn to play";
+                    return;
+                }
+                
+                let key = '';
+                const keyId = keyElement.id;
+                
+                switch(keyId) {
+                    case 'key-up':
+                        key = 'ArrowUp';
+                        break;
+                    case 'key-down':
+                        key = 'ArrowDown';
+                        break;
+                    case 'key-left':
+                        key = 'ArrowLeft';
+                        break;
+                    case 'key-right':
+                        key = 'ArrowRight';
+                        break;
+                    case 'key-i':
+                        key = 'i';
+                        break;
+                    case 'key-o':
+                        key = 'o';
+                        break;
+                    case 'key-open':
+                        key = '[';
+                        break;
+                    case 'key-close':
+                        key = ']';
+                        break;
+                }
+                
+                if (key && socket && socket.readyState === WebSocket.OPEN) {
+                    keyDisplay.textContent = `Key pressed: ${key}`;
+                    highlightKey(key);
+                    loadingIndicator.style.display = 'block';
+
+                    if (key == ']') {
+                        key = '[';
+                    } else if (key == '[') {
+                        key = ']';
+                    }
+                    socket.send(JSON.stringify({
+                        type: 'keypress',
+                        key: key
+                    }));
+                }
+            });
+        });
+
+        // Add click handler for "More scenes" button
+        moreScenesBtn.addEventListener('click', () => {
+            if (!isActivePlayer) {
+                statusMessage.textContent = "Please wait for your turn to request more scenes";
+                return;
+            }
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                statusMessage.textContent = "Loading more scenes...";
+                moreScenesBtn.disabled = true;
+                
+                // Send request for more image options
+                socket.send(JSON.stringify({
+                    type: 'request_more_scenes'
+                }));
+                
+                // Re-enable button after a short delay
+                setTimeout(() => {
+                    moreScenesBtn.disabled = false;
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

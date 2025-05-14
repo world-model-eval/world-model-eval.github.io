@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluating Robot Policies in a World Model</title>
+    <style>
+        :root {
+            /* Dark mode colors (default) */
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-primary: #000000;
+            --accent-secondary: #000000;
+            --accent-tertiary: #000000;
+            --border-color: #404040;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --warning-color: #FFA500;
+            --error-color: #f44336;
+            --accent-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                /* Light mode colors */
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #e0e0e0;
+                --text-primary: #212121;
+                --text-secondary: #757575;
+                --accent-primary: #000000;
+                --accent-secondary: #000000;
+                --accent-tertiary: #000000;
+                --border-color: #d0d0d0;
+                --shadow-color: rgba(0, 0, 0, 0.1);
+                --warning-color: #FF8F00;
+                --error-color: #d32f2f;
+                --accent-text: #ffffff;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1.6;
+        }
+        
+        .paper-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .paper-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
+            line-height: 1.2;
+        }
+        
+        .authors {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .authors a {
+            color: var(--text-primary);
+            text-decoration: underline;
+            text-decoration-color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        
+        .authors a:hover {
+            color: var(--text-secondary);
+            text-decoration-color: var(--text-primary);
+        }
+        
+        .affiliations {
+            font-size: 1em;
+            margin-bottom: 40px;
+            color: var(--text-secondary);
+            font-style: italic;
+            transition: color 0.3s ease;
+        }
+        
+        .media-gallery {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .media-item {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+        
+        .media-item:hover {
+            border-color: var(--accent-primary);
+        }
+        
+        .media-caption {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-style: italic;
+            transition: color 0.3s ease;
+        }
+        
+        .rollout-gifs-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0;
+            margin: 10px 0;
+            width: 100%;
+        }
+        
+        .rollout-gif {
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            max-height: 100px;
+            width: auto;
+        }
+        
+        .rollout-section-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            color: var(--text-primary);
+            text-align: center;
+        }
+        
+        .abstract {
+            text-align: left;
+            font-size: 0.8em;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .abstract-label {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            font-weight: 500;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+        
+        .nav-button:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .paper-title {
+                font-size: 2em;
+            }
+            
+            .authors {
+                font-size: 1.1em;
+            }
+            
+            .abstract {
+                padding: 20px;
+                font-size: 1em;
+            }
+            
+            body {
+                padding: 20px 15px;
+            }
+            
+            .media-item {
+                max-width: 200px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="paper-container">
+        <h1 class="paper-title">Evaluating Robot Policies in a World Model</h1>
+        
+        <div class="authors">
+            <a href="https://julian-q.github.io/">Julian Quevedo</a><sup>1</sup>, <a href="https://cs.stanford.edu/~pliang/">Percy Liang</a><sup>1</sup>, <a href="https://sherryy.github.io/">Sherry Yang</a><sup>1,2,3</sup>
+        </div>
+        
+        <div class="affiliations">
+            Stanford University<sup>1</sup>, New York University<sup>2</sup>, Google DeepMind<sup>3</sup><br>
+        </div>
+        
+        <a href="index.html" class="nav-button">🎮 Try Interactive Demo</a>
+        <a href="https://github.com/world-model-eval/world-model-eval" class="nav-button">📁 GitHub</a>
+        <a href="https://arxiv.org/abs/2506.00613" class="nav-button">📄 Arxiv</a>
+        
+        <div class="media-gallery">
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 5px;">
+                <div style="text-align: center;">
+                    <img src="media/gripper.gif" alt="Gripper demonstration" class="media-item" style="max-width: 300px;">
+                    <div class="media-caption">Gripper Control</div>
+                </div>
+                <div style="text-align: center;">
+                    <img src="media/sweep_x.gif" alt="Sweep X demonstration" class="media-item" style="max-width: 300px;">
+                    <div class="media-caption">Sweep X-Axis</div>
+                </div>
+                <div style="text-align: center;">
+                    <img src="media/sweep_y.gif" alt="Sweep Y demonstration" class="media-item" style="max-width: 300px;">
+                    <div class="media-caption">Sweep Y-Axis</div>
+                </div>
+                <div style="text-align: center;">
+                    <img src="media/sweep_z.gif" alt="Sweep Z demonstration" class="media-item" style="max-width: 300px;">
+                    <div class="media-caption">Sweep Z-Axis</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="abstract">
+            <div class="abstract-label">Abstract</div>
+            <p>
+                Robotics has broad applications from automating house chores to taking care of
+                patients. However, evaluating robot control policies is challenging, as real-world
+                testing is expensive, while handcrafted simulations often fail to accurately reflect
+                real-world conditions, resulting in poor correlation between simulated evaluation
+                and real-world outcomes. In this work, we investigate World-model-based Policy
+                Evaluation (WPE). We first train an action-conditioned video generation model
+                as a proxy to real-world environments. To enable efficient rollouts of hundreds
+                of interactive steps while mitigating error accumulation in the world model, we
+                propose an inference scheme which we call <i>Blockwise-Autoregressive Diffusion
+                Transformer</i> with adjustable context and decoding horizon lengths. To ensure that
+                the world model indeed follows action input, we propose metrics based on the
+                agreement between the ground truth video and generated video conditioned on the
+                same sequence of actions to evaluate the world model. We then use the world model
+                for policy evaluation by performing Monte Carlo rollouts in the world model while
+                employing a vision-language model (VLM) as a reward function. Interestingly,
+                we found that WPE tends to underestimate the policy values for in-distribution
+                actions and overestimate policy values for out-of-distribution actions. Nevertheless,
+                WPE preserves the relative rankings of different policies. In emulating real robot
+                executions, WPE achieves high fidelity in mimicing robot arm movements as in
+                real videos, while emulating highly realistic object interaction remains challenging.
+                Despite this limitation, we show that a world model can serve as a starting point
+                for evaluating robot policies before real-world deployment.
+            </p>
+        </div>
+        
+        <div class="media-gallery">
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                <div style="text-align: center; flex: 1; min-width: 300px; max-width: 350px;">
+                    <img src="figures/in_distribution_policy_values.png" alt="In-distribution policy values" class="media-item" style="max-width: 100%;">
+                    <div class="media-caption" style="text-align: left;"><b>Estimated policy value ρ̂(π) for in-distribution policies</b> (mean and standard error across 4 runs) using WPE compared to the true policy value ρ(π) using the ground truth LIBERO simulator, where π is the OpenVLA policy. WPE achieves policy values close to the ground truth in tasks such as LIBERO-Object. WPE generally underestimates the policy value, while preserving the relative performance ordering across tasks.</div>
+                </div>
+                <div style="text-align: center; flex: 1; min-width: 300px; max-width: 350px;">
+                    <img src="figures/out_of_distribution_policy_values.png" alt="Out-of-distribution policy values" class="media-item" style="max-width: 100%;">
+                    <div class="media-caption" style="text-align: left;"><b>Evaluated policy value ρ̂(π) for out-of-distribution policies</b> (mean and standard error across 4 runs) aggregated across all tasks in LIBERO. π is the OpenVLA policy with different levels of Gaussian noise. WPE overestimates the policy values across all noise levels, suggesting that evaluating out-of-distribution policies using a world model can be challenging. Nevertheless, WPE preserves the ranking of the out-of-distribution policies.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="rollout-section-title">Rollout Examples</div>
+        <div class="media-caption" style="font-style: normal;">Comparing (ground truth, generated) rollouts for unseen action trajectories across different robots, using a single interactive diffusion model.</div>
+        <div class="rollout-gifs-container">
+            <img src="rollout_gifs/002483_000000653_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000016_--success=True--task=pick_up_the_ketchup_and_place_it_in_the_basket--_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000280_sample_00_000000094_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000026_000041818_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000144_sample_00_000000010_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000117_sample_00_000000020_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000003_sample_00_000000018_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000029_000000377_.gif" alt="Rollout" class="rollout-gif">
+            <img src="rollout_gifs/000006_.gif" alt="Rollout" class="rollout-gif">
+            <!-- <img src="rollout_gifs/000587_sample_00_000000004_.gif" alt="Rollout" class="rollout-gif"> -->
+            <img src="rollout_gifs/000001_000012128_.gif" alt="Rollout" class="rollout-gif">
+        </div>
+        
+        <div class="abstract" style="margin-top: 30px;">
+            <div class="abstract-label">Citation</div>
+            <p style="margin-bottom: 15px;">If you find this work useful, please cite:</p>
+            <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.4; overflow-x: auto; border: 1px solid var(--border-color); text-align: left;">@misc{quevedo2025evaluatingrobotpoliciesworld,
+      title={Evaluating Robot Policies in a World Model}, 
+      author={Julian Quevedo and Percy Liang and Sherry Yang},
+      year={2025},
+      eprint={2506.00613},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2506.00613}, 
+}</pre>
+        </div>
+    </div>
+</body>
+</html>
