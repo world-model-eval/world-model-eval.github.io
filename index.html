@@ -320,6 +320,13 @@
             transition: all 0.3s ease;
             cursor: pointer;
             user-select: none;
+            white-space: nowrap;
+        }
+        
+        /* Wider buttons for gripper controls with labels */
+        #key-open, #key-close {
+            width: 80px;
+            font-size: 10px;
         }
         
         .key:hover {
@@ -399,6 +406,12 @@
                 width: 45px;
                 height: 45px;
                 margin: 0 3px;
+            }
+            
+            /* Keep gripper buttons wider even on mobile */
+            #key-open, #key-close {
+                width: 100px;
+                font-size: 9px;
             }
             
             .arrow-keys {
