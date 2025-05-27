@@ -3,36 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>interactive</title>
+    <title>Neural World Model - Interactive Game</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #222;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
         }
+        
         .game-container {
             text-align: center;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            position: relative;
         }
+        
+        .game-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4CAF50, #2196F3, #FF9800);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+
+        
         #game-canvas {
-            border: 2px solid #444;
+            border: 3px solid #444;
             background-color: #000;
             margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: box-shadow 0.3s ease;
         }
+        
+        #game-canvas:hover {
+            box-shadow: 0 12px 48px rgba(76, 175, 80, 0.2);
+        }
+        
         .instructions {
             max-width: 600px;
             margin: 0 auto;
             text-align: left;
         }
+        
         .key-pressed {
             font-size: 24px;
             height: 30px;
             margin-bottom: 10px;
+            color: #4CAF50;
+            font-weight: bold;
         }
+        
         .loading {
             position: absolute;
             top: 50%;
@@ -40,55 +82,96 @@
             transform: translate(-50%, -50%);
             font-size: 24px;
             color: white;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
+            border-radius: 15px;
             display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         .image-gallery {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
+        
         .image-option {
             width: 80px;
             height: 80px;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.2s, transform 0.1s;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            object-fit: cover;
         }
+        
         .image-option:hover {
             border-color: #888;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
+        
         .image-option.selected {
             border-color: #4CAF50;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
         }
+        
         .image-option:active {
             transform: scale(0.95);
         }
+        
         .status-message {
             height: 20px;
             margin-bottom: 10px;
             color: #aaa;
             font-size: 14px;
+            font-weight: 500;
         }
+        
         .queue-info {
             font-size: 24px;
             margin-bottom: 20px;
             color: #FFA500;
             font-weight: bold;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 5px;
+            padding: 15px 20px;
+            background: rgba(255, 165, 0, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 165, 0, 0.3);
             display: none;
+            backdrop-filter: blur(10px);
         }
+        
         .timer {
             font-size: 18px;
             margin-bottom: 10px;
             color: #4CAF50;
             display: none;
+            font-weight: bold;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
         }
+        
         .waiting-overlay {
             position: absolute;
             top: 0;
@@ -102,90 +185,194 @@
             align-items: center;
             z-index: 10;
             display: none;
+            backdrop-filter: blur(5px);
         }
+        
         .waiting-overlay h2 {
             color: #FFA500;
             margin-bottom: 20px;
         }
+        
         .client-id {
             position: fixed;
             bottom: 5px;
             right: 10px;
             font-size: 10px;
             color: #555;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 8px;
+            border-radius: 4px;
         }
+        
         .server-info {
             position: fixed;
             bottom: 5px;
             left: 10px;
             font-size: 10px;
             color: #555;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 8px;
+            border-radius: 4px;
         }
+        
         .total-queue {
             font-size: 16px;
             color: #888;
             margin-top: 5px;
         }
+        
         .controls-container {
-            margin-top: 20px;
-            border-top: 1px solid #444;
-            padding-top: 20px;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 25px;
+            border: 1px solid #444;
             display: flex;
             justify-content: center;
+            align-items: center;
+            gap: 20px;
             flex-wrap: wrap;
-            gap: 30px;
+            backdrop-filter: blur(10px);
         }
+        
         .control-group {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        
         .control-title {
             font-weight: bold;
-            margin-bottom: 10px;
             color: #4CAF50;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 5px;
+            white-space: nowrap;
         }
+        
         .key-row {
             display: flex;
-            justify-content: center;
-            margin-bottom: 5px;
+            align-items: center;
+            gap: 3px;
         }
+        
         .key {
-            width: 50px;
-            height: 50px;
-            background-color: #333;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
             color: white;
-            border: 2px solid #555;
+            border: 1px solid #555;
             border-radius: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
-            margin: 0 5px;
-            box-shadow: 0 3px 0 #222;
-        }
-        .key.active {
-            background-color: #4CAF50;
-            transform: translateY(3px);
-            box-shadow: 0 0 0 #222;
-        }
-        .key-label {
             font-size: 12px;
-            color: #aaa;
-            margin-top: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
         }
+        
+        .key:hover {
+            background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        }
+        
+        .key.active {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            border-color: #4CAF50;
+        }
+        
+        .key-label {
+            display: none; /* Hide labels in compact mode */
+        }
+        
         .arrow-keys {
-            position: relative;
-            height: 165px;
-            width: 165px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
+        
+        .arrow-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            width: 102px;
+            height: 66px;
+        }
+        
+        .arrow-group .key:nth-child(1) { grid-column: 2; grid-row: 1; } /* Up */
+        .arrow-group .key:nth-child(2) { grid-column: 1; grid-row: 2; } /* Left */
+        .arrow-group .key:nth-child(3) { grid-column: 3; grid-row: 2; } /* Right */
+        .arrow-group .key:nth-child(4) { grid-column: 2; grid-row: 2; } /* Down */
+        
         .spacer {
-            width: 50px;
-            height: 50px;
-            visibility: hidden;
+            display: none; /* Remove spacers in compact mode */
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .connection-status.connected {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .controls-container {
+                gap: 20px;
+            }
+            
+            .key {
+                width: 45px;
+                height: 45px;
+                margin: 0 3px;
+            }
+            
+            .arrow-keys {
+                height: 145px;
+                width: 145px;
+            }
+            
+            .spacer {
+                width: 45px;
+                height: 45px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="connection-status disconnected" id="connection-status">Disconnected</div>
+    
     <div class="game-container">
+        <h1 class="game-title">Neural World Model</h1>
+        
         <div class="queue-info" id="queue-info">
             Waiting in queue: Position <span id="queue-position">0</span>
             <div class="total-queue" id="total-queue"></div>
@@ -197,47 +384,35 @@
         <div class="status-message" id="status-message"></div>
         <div class="key-pressed" id="key-display"></div>
         <canvas id="game-canvas" width="512" height="512"></canvas>
-        <div class="loading" id="loading-indicator">Generating...</div>
+        <div class="loading" id="loading-indicator">Generating</div>
         
         <div class="controls-container">
             <div class="control-group">
-                <div class="control-title">Movement</div>
+                <div class="control-title">Move</div>
                 <div class="arrow-keys">
-                    <div class="key-row">
-                        <div class="spacer"></div>
+                    <div class="arrow-group">
                         <div class="key" id="key-up">↑</div>
-                        <div class="spacer"></div>
-                    </div>
-                    <div class="key-row">
                         <div class="key" id="key-left">←</div>
-                        <div class="spacer"></div>
                         <div class="key" id="key-right">→</div>
-                    </div>
-                    <div class="key-row">
-                        <div class="spacer"></div>
                         <div class="key" id="key-down">↓</div>
-                        <div class="spacer"></div>
                     </div>
                 </div>
-                <div class="key-label">Arrow Keys: Move</div>
             </div>
             
             <div class="control-group">
-                <div class="control-title">Forward/Backward</div>
+                <div class="control-title">Depth</div>
                 <div class="key-row">
                     <div class="key" id="key-i">I</div>
                     <div class="key" id="key-o">O</div>
                 </div>
-                <div class="key-label">I: Forward, O: Backward</div>
             </div>
             
             <div class="control-group">
-                <div class="control-title">Gripper</div>
+                <div class="control-title">Grip</div>
                 <div class="key-row">
                     <div class="key" id="key-open">[</div>
                     <div class="key" id="key-close">]</div>
                 </div>
-                <div class="key-label">[: Open, ]: Close</div>
             </div>
         </div>
     </div>
@@ -258,6 +433,7 @@
         const timeRemaining = document.getElementById('time-remaining');
         const clientIdDisplay = document.getElementById('client-id');
         const serverInfo = document.getElementById('server-info');
+        const connectionStatus = document.getElementById('connection-status');
         
         // URL for coordinator server (central queue manager)
         const COORDINATOR_URL = 'wss://tiny-world-model.fly.dev:8700';  // Updated to match coordinator's client port
@@ -268,6 +444,12 @@
         let clientId = null;
         let heartbeatInterval = null;
         let socket = null;
+        
+        // Game control keys that should not scroll the page
+        const gameKeys = new Set([
+            'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+            'i', 'I', 'o', 'O', '[', ']'
+        ]);
         
         // Function to send heartbeat to the server
         function startHeartbeat() {
@@ -312,12 +494,24 @@
             clearInterval(countdownInterval);
             secondsLeft = seconds;
             timeRemaining.textContent = secondsLeft;
-            timer.style.display = 'block';
+            
+            // Only show timer when 1 minute (60 seconds) or less remaining
+            if (secondsLeft <= 60) {
+                timer.style.display = 'block';
+            } else {
+                timer.style.display = 'none';
+            }
             
             countdownInterval = setInterval(() => {
                 secondsLeft--;
                 timeRemaining.textContent = secondsLeft;
                 
+                // Show timer when 1 minute or less remaining
+                if (secondsLeft <= 60 && timer.style.display === 'none') {
+                    timer.style.display = 'block';
+                }
+                
+                // Change color when 10 seconds remaining
                 if (secondsLeft <= 10) {
                     timer.style.color = '#FF4500'; // Change color when close to timeout
                 }
@@ -333,6 +527,17 @@
             clearInterval(countdownInterval);
             timer.style.display = 'none';
             timer.style.color = '#4CAF50'; // Reset color
+        }
+        
+        // Function to update connection status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.className = 'connection-status connected';
+            } else {
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.className = 'connection-status disconnected';
+            }
         }
         
         // Function to update the image gallery with new images
@@ -390,6 +595,7 @@
             socket.addEventListener('open', () => {
                 console.log('Connected to coordinator server');
                 statusMessage.textContent = 'Connected to server. Waiting for assignment...';
+                updateConnectionStatus(true);
                 
                 // Start sending heartbeats
                 startHeartbeat();
@@ -408,7 +614,7 @@
                         if (data.message.includes("Your turn")) {
                             isActivePlayer = true;
                             queueInfo.style.display = 'none';
-                            startCountdown(60);
+                            startCountdown(300); // 5 minutes = 300 seconds
                         }
                         
                         // Check if time is up
@@ -463,6 +669,7 @@
                 console.log('Disconnected from server');
                 isActivePlayer = false;
                 stopCountdown();
+                updateConnectionStatus(false);
                 
                 // Clear heartbeat interval
                 if (heartbeatInterval) {
@@ -475,33 +682,55 @@
             socket.addEventListener('error', (event) => {
                 console.error('WebSocket error:', event);
                 statusMessage.textContent = 'Connection error. Check console for details.';
+                updateConnectionStatus(false);
             });
         }
         
         // Connect to the coordinator on page load
         connectToCoordinator();
         
-        // Handle keypress events
+        // Handle keypress events with prevention of default scrolling behavior
         document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            
+            // Prevent default behavior for game control keys to stop page scrolling
+            if (gameKeys.has(key)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             // Only process if connection is open and is active player
             if (socket && socket.readyState === WebSocket.OPEN && isActivePlayer) {
-                const key = event.key;
-                keyDisplay.textContent = `Key pressed: ${key}`;
-                
-                // Add visual feedback for pressed key
-                highlightKey(key);
-                
-                // Show loading indicator
-                loadingIndicator.style.display = 'block';
-                
-                // Send the keypress to the server
-                socket.send(JSON.stringify({
-                    type: 'keypress',
-                    key: key
-                }));
-            } else if (socket && socket.readyState === WebSocket.OPEN && !isActivePlayer) {
+                // Only handle game control keys
+                if (gameKeys.has(key)) {
+                    keyDisplay.textContent = `Key pressed: ${key}`;
+                    
+                    // Add visual feedback for pressed key
+                    highlightKey(key);
+                    
+                    // Show loading indicator
+                    loadingIndicator.style.display = 'block';
+                    
+                    // Send the keypress to the server
+                    socket.send(JSON.stringify({
+                        type: 'keypress',
+                        key: key
+                    }));
+                }
+            } else if (socket && socket.readyState === WebSocket.OPEN && !isActivePlayer && gameKeys.has(key)) {
                 // Remind user they're not the active player
                 statusMessage.textContent = "Please wait for your turn to play";
+            }
+        });
+        
+        // Also handle keyup events to remove visual feedback
+        document.addEventListener('keyup', (event) => {
+            const key = event.key;
+            
+            // Prevent default behavior for game control keys
+            if (gameKeys.has(key)) {
+                event.preventDefault();
+                event.stopPropagation();
             }
         });
         
@@ -549,6 +778,57 @@
                 }, 200);
             }
         }
+        
+        // Add click handlers to visual keys for touch/mouse interaction
+        document.querySelectorAll('.key').forEach(keyElement => {
+            keyElement.addEventListener('click', () => {
+                if (!isActivePlayer) {
+                    statusMessage.textContent = "Please wait for your turn to play";
+                    return;
+                }
+                
+                let key = '';
+                const keyId = keyElement.id;
+                
+                switch(keyId) {
+                    case 'key-up':
+                        key = 'ArrowUp';
+                        break;
+                    case 'key-down':
+                        key = 'ArrowDown';
+                        break;
+                    case 'key-left':
+                        key = 'ArrowLeft';
+                        break;
+                    case 'key-right':
+                        key = 'ArrowRight';
+                        break;
+                    case 'key-i':
+                        key = 'i';
+                        break;
+                    case 'key-o':
+                        key = 'o';
+                        break;
+                    case 'key-open':
+                        key = '[';
+                        break;
+                    case 'key-close':
+                        key = ']';
+                        break;
+                }
+                
+                if (key && socket && socket.readyState === WebSocket.OPEN) {
+                    keyDisplay.textContent = `Key pressed: ${key}`;
+                    highlightKey(key);
+                    loadingIndicator.style.display = 'block';
+                    
+                    socket.send(JSON.stringify({
+                        type: 'keypress',
+                        key: key
+                    }));
+                }
+            });
+        });
     </script>
 </body>
 </html>
