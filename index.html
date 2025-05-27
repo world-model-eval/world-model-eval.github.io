@@ -3,22 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural World Model - Interactive Game</title>
+    <title>Robot World Model</title>
     <style>
+        :root {
+            /* Dark mode colors (default) */
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-primary: #4CAF50;
+            --accent-secondary: #45a049;
+            --accent-tertiary: #3d8b40;
+            --border-color: #404040;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --warning-color: #FFA500;
+            --error-color: #f44336;
+            --accent-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                /* Light mode colors */
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #e0e0e0;
+                --text-primary: #212121;
+                --text-secondary: #757575;
+                --accent-primary: #4CAF50;
+                --accent-secondary: #45a049;
+                --accent-tertiary: #3d8b40;
+                --border-color: #d0d0d0;
+                --shadow-color: rgba(0, 0, 0, 0.1);
+                --warning-color: #FF8F00;
+                --error-color: #d32f2f;
+                --accent-text: #ffffff;
+            }
+        }
+
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Trebuchet MS', Arial, sans-serif;
             overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .game-container {
@@ -33,32 +70,16 @@
             font-size: 2.5em;
             font-weight: bold;
             margin-bottom: 10px;
-            background: linear-gradient(45deg, #4CAF50, #2196F3, #FF9800);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease-in-out infinite;
+            color: var(--text-primary);
+            transition: color 0.3s ease;
         }
-        
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-
         
         #game-canvas {
-            border: 3px solid #444;
-            background-color: #000;
+            border: 3px solid var(--border-color);
+            background-color: var(--bg-tertiary);
             margin-bottom: 20px;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            transition: box-shadow 0.3s ease;
-        }
-        
-        #game-canvas:hover {
-            box-shadow: 0 12px 48px rgba(76, 175, 80, 0.2);
+            transition: border-color 0.3s ease, background-color 0.3s ease;
         }
         
         .instructions {
@@ -71,8 +92,9 @@
             font-size: 24px;
             height: 30px;
             margin-bottom: 10px;
-            color: #4CAF50;
+            color: var(--text-primary);
             font-weight: bold;
+            transition: color 0.3s ease;
         }
         
         .loading {
@@ -81,13 +103,13 @@
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
-            color: white;
-            background: rgba(0, 0, 0, 0.8);
+            color: var(--text-primary);
+            background: var(--bg-secondary);
             padding: 20px 30px;
             border-radius: 15px;
             display: none;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
         
         .loading::after {
@@ -95,7 +117,7 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid #4CAF50;
+            border: 2px solid var(--text-primary);
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 1s linear infinite;
@@ -110,8 +132,37 @@
             display: flex;
             justify-content: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
+        }
+        
+        .more-scenes-btn {
+            width: 80px;
+            height: 80px;
+            background: #333333;
+            color: #eeeeee;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .more-scenes-btn:hover {
+            background: #555555;
+        }
+        
+        .more-scenes-btn:active {
+            background: #555555;
+        }
+        
+        .more-scenes-btn:disabled {
+            background: #555555;
+            cursor: not-allowed;
         }
         
         .image-option {
@@ -120,56 +171,51 @@
             cursor: pointer;
             border: 3px solid transparent;
             border-radius: 12px;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease;
             object-fit: cover;
         }
         
         .image-option:hover {
-            border-color: #888;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-color: var(--text-secondary);
         }
         
         .image-option.selected {
-            border-color: #4CAF50;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
-        }
-        
-        .image-option:active {
-            transform: scale(0.95);
+            border-color: var(--text-primary);
         }
         
         .status-message {
             height: 20px;
             margin-bottom: 10px;
-            color: #aaa;
+            color: var(--text-secondary);
             font-size: 14px;
             font-weight: 500;
+            transition: color 0.3s ease;
         }
         
         .queue-info {
             font-size: 24px;
             margin-bottom: 20px;
-            color: #FFA500;
+            color: var(--warning-color);
             font-weight: bold;
             padding: 15px 20px;
-            background: rgba(255, 165, 0, 0.1);
+            background: var(--bg-secondary);
             border-radius: 12px;
-            border: 1px solid rgba(255, 165, 0, 0.3);
+            border: 1px solid var(--warning-color);
             display: none;
-            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
         
         .timer {
             font-size: 18px;
             margin-bottom: 10px;
-            color: #4CAF50;
+            color: var(--text-primary);
             display: none;
             font-weight: bold;
             padding: 10px;
-            background: rgba(76, 175, 80, 0.1);
+            background: var(--bg-secondary);
             border-radius: 8px;
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            border: 1px solid var(--text-primary);
+            transition: all 0.3s ease;
         }
         
         .waiting-overlay {
@@ -178,19 +224,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: var(--shadow-color);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10;
             display: none;
-            backdrop-filter: blur(5px);
+            transition: background-color 0.3s ease;
         }
         
         .waiting-overlay h2 {
-            color: #FFA500;
+            color: var(--warning-color);
             margin-bottom: 20px;
+            transition: color 0.3s ease;
         }
         
         .client-id {
@@ -198,10 +245,11 @@
             bottom: 5px;
             right: 10px;
             font-size: 10px;
-            color: #555;
-            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
             padding: 5px 8px;
             border-radius: 4px;
+            transition: all 0.3s ease;
         }
         
         .server-info {
@@ -209,30 +257,29 @@
             bottom: 5px;
             left: 10px;
             font-size: 10px;
-            color: #555;
-            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
             padding: 5px 8px;
             border-radius: 4px;
+            transition: all 0.3s ease;
         }
         
         .total-queue {
             font-size: 16px;
-            color: #888;
+            color: var(--text-secondary);
             margin-top: 5px;
+            transition: color 0.3s ease;
         }
         
         .controls-container {
             margin-top: 15px;
             padding: 10px 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 25px;
-            border: 1px solid #444;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 20px;
             flex-wrap: wrap;
-            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
         
         .control-group {
@@ -243,12 +290,13 @@
         
         .control-title {
             font-weight: bold;
-            color: #4CAF50;
+            color: var(--text-primary);
             font-size: 0.8em;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-right: 5px;
             white-space: nowrap;
+            transition: color 0.3s ease;
         }
         
         .key-row {
@@ -260,32 +308,28 @@
         .key {
             width: 32px;
             height: 32px;
-            background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
-            color: white;
-            border: 1px solid #555;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             font-size: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             cursor: pointer;
             user-select: none;
         }
         
         .key:hover {
-            background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
-            transform: translateY(-1px);
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            background: var(--bg-primary);
         }
         
         .key.active {
-            background: linear-gradient(145deg, #4CAF50, #45a049);
-            transform: translateY(1px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-            border-color: #4CAF50;
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+            color: var(--bg-primary);
         }
         
         .key-label {
@@ -329,15 +373,17 @@
         }
         
         .connection-status.connected {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-            border: 1px solid rgba(76, 175, 80, 0.5);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--text-primary);
+            transition: all 0.3s ease;
         }
         
         .connection-status.disconnected {
-            background: rgba(244, 67, 54, 0.2);
-            color: #f44336;
-            border: 1px solid rgba(244, 67, 54, 0.5);
+            background: var(--bg-secondary);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+            transition: all 0.3s ease;
         }
         
         @media (max-width: 768px) {
@@ -371,7 +417,7 @@
     <div class="connection-status disconnected" id="connection-status">Disconnected</div>
     
     <div class="game-container">
-        <h1 class="game-title">Neural World Model</h1>
+        <!-- <h1 class="game-title">Neural World Model</h1> -->
         
         <div class="queue-info" id="queue-info">
             Waiting in queue: Position <span id="queue-position">0</span>
@@ -380,9 +426,10 @@
         <div class="timer" id="timer">Time remaining: <span id="time-remaining">60</span> seconds</div>
         <div class="image-gallery" id="image-gallery">
             <!-- Images will be added here via JavaScript -->
+            <button class="more-scenes-btn" id="more-scenes-btn">more scenes️</button>
         </div>
         <div class="status-message" id="status-message"></div>
-        <div class="key-pressed" id="key-display"></div>
+        <div class="key-pressed" id="key-display" style="display: none;"></div>
         <canvas id="game-canvas" width="512" height="512"></canvas>
         <div class="loading" id="loading-indicator">Generating</div>
         
@@ -434,6 +481,7 @@
         const clientIdDisplay = document.getElementById('client-id');
         const serverInfo = document.getElementById('server-info');
         const connectionStatus = document.getElementById('connection-status');
+        const moreScenesBtn = document.getElementById('more-scenes-btn');
         
         // URL for coordinator server (central queue manager)
         const COORDINATOR_URL = 'wss://tiny-world-model.fly.dev:8700';  // Updated to match coordinator's client port
@@ -513,7 +561,7 @@
                 
                 // Change color when 10 seconds remaining
                 if (secondsLeft <= 10) {
-                    timer.style.color = '#FF4500'; // Change color when close to timeout
+                    timer.style.color = 'var(--error-color)'; // Change color when close to timeout
                 }
                 
                 if (secondsLeft <= 0) {
@@ -526,7 +574,7 @@
         function stopCountdown() {
             clearInterval(countdownInterval);
             timer.style.display = 'none';
-            timer.style.color = '#4CAF50'; // Reset color
+            timer.style.color = 'var(--text-primary)'; // Reset color
         }
         
         // Function to update connection status
@@ -585,6 +633,9 @@
                 
                 imageGallery.appendChild(imgElement);
             });
+            
+            // Re-add the "More Scenes" button to the gallery
+            imageGallery.appendChild(moreScenesBtn);
         }
         
         // Connect to coordinator server and set up event handlers
@@ -614,12 +665,14 @@
                         if (data.message.includes("Your turn")) {
                             isActivePlayer = true;
                             queueInfo.style.display = 'none';
+                            moreScenesBtn.style.display = 'block';
                             startCountdown(300); // 5 minutes = 300 seconds
                         }
                         
                         // Check if time is up
                         if (data.message.includes("time is up")) {
                             isActivePlayer = false;
+                            moreScenesBtn.style.display = 'none';
                             stopCountdown();
                         }
                         break;
@@ -634,6 +687,7 @@
                         // Update queue position display
                         isActivePlayer = false;
                         queueInfo.style.display = 'block';
+                        moreScenesBtn.style.display = 'none';
                         queuePosition.textContent = data.position;
                         if (data.total_in_queue) {
                             totalQueue.textContent = `Total waiting: ${data.total_in_queue}`;
@@ -661,6 +715,7 @@
                         serverInfo.textContent = `Server: ${data.backend_name}`;
                         isActivePlayer = true;
                         queueInfo.style.display = 'none';
+                        moreScenesBtn.style.display = 'block';
                         break;
                 }
             });
@@ -828,6 +883,29 @@
                     }));
                 }
             });
+        });
+
+        // Add click handler for "More scenes" button
+        moreScenesBtn.addEventListener('click', () => {
+            if (!isActivePlayer) {
+                statusMessage.textContent = "Please wait for your turn to request more scenes";
+                return;
+            }
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                statusMessage.textContent = "Loading more scenes...";
+                moreScenesBtn.disabled = true;
+                
+                // Send request for more image options
+                socket.send(JSON.stringify({
+                    type: 'request_more_scenes'
+                }));
+                
+                // Re-enable button after a short delay
+                setTimeout(() => {
+                    moreScenesBtn.disabled = false;
+                }, 1000);
+            }
         });
     </script>
 </body>
