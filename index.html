@@ -780,13 +780,7 @@
                     // Show loading indicator
                     loadingIndicator.style.display = 'block';
 
-                    // Sorry I have a bug
-                    if (key === '[') {
-                        key = ']';
-                    } else if (key === ']') {
-                        key = '[';
-                    }
-                    
+                    key = key == '[' ? ']' : key == ']' ? '[' : key;
                     // Send the keypress to the server
                     socket.send(JSON.stringify({
                         type: 'keypress',
@@ -898,12 +892,7 @@
                     highlightKey(key);
                     loadingIndicator.style.display = 'block';
 
-                    if (key === '[') {
-                        key = ']';
-                    } else if (key === ']') {
-                        key = '[';
-                    }
-                    
+                    key = key == '[' ? ']' : key == ']' ? '[' : key;
                     socket.send(JSON.stringify({
                         type: 'keypress',
                         key: key
