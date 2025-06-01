@@ -470,8 +470,8 @@
             <div class="control-group">
                 <div class="control-title">Grip</div>
                 <div class="key-row">
-                    <div class="key" id="key-close">] (open)</div>
-                    <div class="key" id="key-open">[ (close)</div>
+                    <div class="key" id="key-open">[ (open)</div>
+                    <div class="key" id="key-close">] (close)</div>
                 </div>
             </div>
         </div>
@@ -779,6 +779,13 @@
                     
                     // Show loading indicator
                     loadingIndicator.style.display = 'block';
+
+                    // Sorry I have a bug
+                    if (key === '[') {
+                        key = ']';
+                    } else if (key === ']') {
+                        key = '[';
+                    }
                     
                     // Send the keypress to the server
                     socket.send(JSON.stringify({
@@ -890,6 +897,12 @@
                     keyDisplay.textContent = `Key pressed: ${key}`;
                     highlightKey(key);
                     loadingIndicator.style.display = 'block';
+
+                    if (key === '[') {
+                        key = ']';
+                    } else if (key === ']') {
+                        key = '[';
+                    }
                     
                     socket.send(JSON.stringify({
                         type: 'keypress',
