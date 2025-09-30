@@ -262,28 +262,7 @@
         <div class="abstract">
             <div class="abstract-label">Abstract</div>
             <p>
-                Robotics has broad applications from automating house chores to taking care of
-                patients. However, evaluating robot control policies is challenging, as real-world
-                testing is expensive, while handcrafted simulations often fail to accurately reflect
-                real-world conditions, resulting in poor correlation between simulated evaluation
-                and real-world outcomes. In this work, we investigate World-model-based Policy
-                Evaluation (WPE). We first train an action-conditioned video generation model
-                as a proxy to real-world environments. To enable efficient rollouts of hundreds
-                of interactive steps while mitigating error accumulation in the world model, we
-                propose an inference scheme which we call <i>Blockwise-Autoregressive Diffusion
-                Transformer</i> with adjustable context and decoding horizon lengths. To ensure that
-                the world model indeed follows action input, we propose metrics based on the
-                agreement between the ground truth video and generated video conditioned on the
-                same sequence of actions to evaluate the world model. We then use the world model
-                for policy evaluation by performing Monte Carlo rollouts in the world model while
-                employing a vision-language model (VLM) as a reward function. Interestingly,
-                we found that WPE tends to underestimate the policy values for in-distribution
-                actions and overestimate policy values for out-of-distribution actions. Nevertheless,
-                WPE preserves the relative rankings of different policies. In emulating real robot
-                executions, WPE achieves high fidelity in mimicing robot arm movements as in
-                real videos, while emulating highly realistic object interaction remains challenging.
-                Despite this limitation, we show that a world model can serve as a starting point
-                for evaluating robot policies before real-world deployment.
+Evaluating robot control policies is difficult: real-world testing is costly, and handcrafted simulators require manual effort to improve in realism and generality. We propose a world-model-based policy evaluation environment (WorldGym), an autoregressive, action-conditioned video generation model which serves as a proxy to real world environments. Policies are evaluated via Monte Carlo rollouts in the world model, with a vision-language model providing rewards. We evaluate a set of VLA-based real-robot policies in the world model using only initial frames from real robots, and show that policy success rates within the world model highly correlate with real-world success rates. Moreoever, we show that WorldGym is able to preserve relative policy rankings across different policy versions, sizes, and training checkpoints. Due to requiring only a single start frame as input, the world model further enables efficient evaluation of robot policies' generalization ability on novel tasks and environments. We find that modern VLA-based robot policies still struggle to distinguish object shapes and can become distracted by adversarial facades of objects. While generating highly realistic object interaction remains challenging, WorldGym faithfully emulates robot motions and offers a practical starting point for safe and reproducible policy evaluation before deployment.
             </p>
         </div>
         
