@@ -117,15 +117,11 @@
             transition: border-color 0.3s ease;
         }
         
-        .media-item:hover {
-            border-color: var(--accent-primary);
-        }
-        
         .media-caption {
             font-size: 0.9em;
             color: var(--text-secondary);
             margin-top: 10px;
-            font-style: italic;
+            font-style: normal;
             transition: color 0.3s ease;
         }
         
@@ -224,14 +220,14 @@
 </head>
 <body>
     <div class="paper-container">
-        <h1 class="paper-title">Evaluating Robot Policies in a World Model</h1>
+        <h1 class="paper-title">WorldGym: World Model as An Environment for Policy Evaluation</h1>
         
         <div class="authors">
-            <a href="https://julian-q.github.io/">Julian Quevedo</a><sup>1</sup>, <a href="https://cs.stanford.edu/~pliang/">Percy Liang</a><sup>1</sup>, <a href="https://sherryy.github.io/">Sherry Yang</a><sup>1,2,3</sup>
+            <a href="https://julian-q.github.io/">Julian Quevedo</a>,<sup>1</sup> Ansh Kumar Sharma,<sup>2</sup> Yixiang Sun,<sup>2</sup> Varad Suryavanshi,<sup>2</sup> <a href="https://cs.stanford.edu/~pliang/">Percy Liang</a>,<sup>1</sup> <a href="https://sherryy.github.io/">Sherry Yang</a><sup>1,2,3</sup>
         </div>
-        
+
         <div class="affiliations">
-            Stanford University<sup>1</sup>, New York University<sup>2</sup>, Google DeepMind<sup>3</sup><br>
+            <sup>1</sup>Stanford University, <sup>2</sup>NYU, <sup>3</sup>Google DeepMind<br>
         </div>
         
         <a href="index.html" class="nav-button">🎮 Try Interactive Demo</a>
@@ -269,7 +265,7 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="rollout-section-title">Overview of WorldGym</div>
         <div class="media-gallery">
             <div style="text-align: center;">
-                <img src="figures_svg/overview.svg" alt="Overview of WorldGym" class="media-item" style="max-width: 100%;">
+                <img src="figures_svg/overview.svg" alt="Overview of WorldGym" style="max-width: 100%; border: none; border-radius: 0;">
                 <div class="media-caption" style="text-align: left;"><b>Overview of WorldGym.</b> Given an initial frame and an action sequence predicted by a policy, WorldGym uses a world model to interactively predict future frames, serving as a generative simulator. WorldGym then passes the generated rollout to a VLM which provides rewards. WorldGym can easily be used to test policies on OOD tasks and environments by changing the input language instruction or directly modifying the initial image.</div>
             </div>
         </div>
@@ -291,7 +287,7 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="rollout-section-title">Policy Rollouts on Bridge and Google Robot</div>
         <div class="media-gallery">
             <div style="text-align: center;">
-                <img src="figures_svg/policy_rollouts_2.svg" alt="Policy Rollouts" class="media-item" style="max-width: 100%;">
+                <img src="figures_svg/policy_rollouts_2.svg" alt="Policy Rollouts" style="max-width: 100%; border: none; border-radius: 0;">
                 <div class="media-caption" style="text-align: left;"><b>Qualitative policy rollouts on Bridge and Google Robot</b> for RT-1-X, Octo, and OpenVLA. OpenVLA rollouts often lead to more visual successes than the other two policies across environments.</div>
             </div>
         </div>
@@ -313,18 +309,18 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="rollout-section-title">Out-of-Distribution Inputs</div>
         <div class="media-gallery">
             <div style="text-align: center; max-width: 400px; margin: 0 auto 20px;">
-                <img src="figures_svg/ood_classify_redblue_tasks.svg" alt="OOD Color Classification" class="media-item" style="max-width: 100%;">
+                <img src="figures_svg/ood_classify_redblue_tasks.svg" alt="OOD Color Classification" style="max-width: 100%; border: none; border-radius: 0;">
                 <div class="media-caption" style="text-align: left;"><b>OOD: Color Classification.</b> We add red and blue pieces of paper to a table, and ask the policies to "pick red" or "pick blue" (OOD image and language). OpenVLA excels, picking the correct colored paper in all trials, whereas all other policies score near chance.</div>
             </div>
 
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1; min-width: 300px; max-width: 380px;">
-                    <img src="figures_svg/ood_put_orange_on_plate_v2.svg" alt="OOD Unseen Object" class="media-item" style="max-width: 100%;">
+                    <img src="figures_svg/ood_put_orange_on_plate_v2.svg" alt="OOD Unseen Object" style="max-width: 100%; border: none; border-radius: 0;">
                     <div class="media-caption" style="text-align: left;"><b>OOD: Unseen object.</b> We use Nano Banana to add an orange to the world model's initial frame. When both the orange and the carrot are present, (a-b) OpenVLA grabs whichever is closer. After (c) editing the carrot's color to red, however, the orange is correctly picked up.</div>
                 </div>
                 <div style="text-align: center; flex: 1; min-width: 300px; max-width: 380px;">
-                    <img src="figures_svg/ood_advanced.svg" alt="OOD Failure Modes" class="media-item" style="max-width: 100%;">
-                    <div class="media-caption" style="text-align: left;"><b>OOD: Failure modes.</b> <i>Left:</i> We add a laptop to the scene, which displays an image of a carrot. In 15% of trials, OpenVLA grabs the laptop instead of the real carrot. <i>Right:</i> We test the ability distinguish to between squares and circles, celebrity faces, and cats and dogs, with all policies scoring near-chance.</div>
+                    <img src="figures_svg/ood_advanced.svg" alt="OOD Failure Modes" style="max-width: 100%; border: none; border-radius: 0;">
+                    <div class="media-caption" style="text-align: left;"><b>OOD: Failure modes.</b> Left: We add a laptop to the scene, which displays an image of a carrot. In 15% of trials, OpenVLA grabs the laptop instead of the real carrot. Right: We test the ability distinguish to between squares and circles, celebrity faces, and cats and dogs, with all policies scoring near-chance.</div>
                 </div>
             </div>
         </div>
@@ -332,7 +328,7 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="rollout-section-title">OOD Language Instructions</div>
         <div class="media-gallery">
             <div style="text-align: center;">
-                <img src="figures_svg/ood_language_rollouts.svg" alt="OOD Language Instructions" class="media-item" style="max-width: 100%;">
+                <img src="figures_svg/ood_language_rollouts.svg" alt="OOD Language Instructions" style="max-width: 100%; border: none; border-radius: 0;">
                 <div class="media-caption" style="text-align: left;"><b>OOD Language Instructions.</b> We pick a set of tasks from the OpenVLA Bridge evaluation suite and modify the language instruction, e.g. changing the the target object and/or its goal destination.</div>
             </div>
         </div>
@@ -341,7 +337,7 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="media-gallery">
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1; min-width: 300px; max-width: 380px;">
-                    <img src="figures_svg/ood_distraction_eval.svg" alt="OOD Distraction Examples" class="media-item" style="max-width: 100%;">
+                    <img src="figures_svg/ood_distraction_eval.svg" alt="OOD Distraction Examples" style="max-width: 100%; border: none; border-radius: 0;">
                     <div class="media-caption" style="text-align: left;"><b>OOD Distraction Examples.</b> We use Nano Banana to add distractions to every image of the OpenVLA Bridge task suite.</div>
                 </div>
                 <div style="text-align: center; flex: 1; min-width: 300px; max-width: 380px;">
@@ -370,14 +366,14 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
         <div class="abstract" style="margin-top: 30px;">
             <div class="abstract-label">Citation</div>
             <p style="margin-bottom: 15px;">If you find this work useful, please cite:</p>
-            <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.4; overflow-x: auto; border: 1px solid var(--border-color); text-align: left;">@misc{quevedo2025evaluatingrobotpoliciesworld,
-      title={Evaluating Robot Policies in a World Model}, 
-      author={Julian Quevedo and Percy Liang and Sherry Yang},
+            <pre style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.4; overflow-x: auto; border: 1px solid var(--border-color); text-align: left;">@misc{quevedo2025worldgymworldmodelenvironment,
+      title={WorldGym: World Model as An Environment for Policy Evaluation},
+      author={Julian Quevedo and Ansh Kumar Sharma and Yixiang Sun and Varad Suryavanshi and Percy Liang and Sherry Yang},
       year={2025},
       eprint={2506.00613},
       archivePrefix={arXiv},
       primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2506.00613}, 
+      url={https://arxiv.org/abs/2506.00613},
 }</pre>
         </div>
     </div>
