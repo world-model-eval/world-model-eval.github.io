@@ -198,24 +198,107 @@
             .paper-title {
                 font-size: 2em;
             }
-            
+
             .authors {
                 font-size: 1.1em;
             }
-            
+
             .abstract {
                 padding: 20px;
                 font-size: 1em;
             }
-            
+
             body {
                 padding: 20px 15px;
             }
-            
+
             .media-item {
                 max-width: 200px !important;
             }
         }
+        /* === Policy rollout comparison table === */
+        .rollout-table-wrapper {
+            margin-top: 12px;
+            overflow-x: auto;            /* mobile: allow horizontal scroll */
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-secondary);
+        }
+
+        .rollout-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;         /* consistent cell widths */
+        }
+
+        .rollout-table thead th {
+            position: sticky;            /* keeps headers visible when scrolling */
+            top: 0;
+            z-index: 1;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 10px;
+            font-weight: 700;
+            font-size: 0.95em;
+        }
+
+        .rollout-table th,
+        .rollout-table td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px;
+            vertical-align: middle;
+        }
+
+        .rollout-table tbody th {
+            text-align: left;
+            background: var(--bg-secondary);
+            font-weight: 600;
+            width: 22%;
+            color: var(--text-primary);
+        }
+
+        .rollout-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rollout-cell img {
+            max-width: 100%;
+            max-height: 180px;           /* tweak as needed */
+            height: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .rollout-cell img:hover {
+            transform: scale(1.02);
+            border-color: var(--text-primary);
+        }
+
+        /* Smaller screens: let rows breathe and images shrink nicely */
+        @media (max-width: 768px) {
+            .rollout-table tbody th {
+                width: 30%;
+            }
+            .rollout-cell img {
+                max-height: 110px;
+            }
+        }
+        /* Hard-reset: make sure the table behaves like a table */
+        .rollout-table { display: table; }
+        .rollout-table thead { display: table-header-group; }
+        .rollout-table tbody { display: table-row-group; }
+        .rollout-table tr { display: table-row; }
+        .rollout-table th, .rollout-table td { display: table-cell; }
+
+        /* Optional: fix column widths */
+        .rollout-table col:first-child { width: 22%; }   /* task column */
+        .rollout-table col { width: 26%; }               /* policy columns */
+
     </style>
 </head>
 <body>
@@ -362,7 +445,195 @@ Evaluating robot control policies is difficult: real-world testing is costly, an
             <!-- <img src="rollout_gifs/000587_sample_00_000000004_.gif" alt="Rollout" class="rollout-gif"> -->
             <img src="rollout_gifs/000001_000012128_.gif" alt="Rollout" class="rollout-gif">
         </div>
-        
+
+
+        <div class="rollout-section-title">In-World-Model Rollouts on Bridge Tasks</div>
+        <div class="rollout-table-wrapper">
+            <table class="rollout-table">
+              <thead>
+                <tr>
+                  <th>Task ▼ / Policy ▶</th>
+                  <th>OPENVLA-7B</th>
+                  <th>OCTO BASE-1.5</th>
+                  <th>RT-1-X</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Put eggplant into Pot</th>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/openvla/rollout-2024_05_28-10_05_22-8.gif" alt="TASK_A – POLICY_A">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/octo/rollout-2024_05_28-10_05_22-8.gif" alt="TASK_A – POLICY_B">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/rt1/__vast__as20482__data__bridge__openvla_evaluation__ood__easy__put_eggplant_into_pot_or_pan__rollout-2024_05_28-10_05_22-8__r0_len41.gif" alt="TASK_A – POLICY_C">
+                  </td>
+                </tr>
+                <tr>
+                  <th>Put corn on plate</th>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/openvla/rollout-2024_05_28-14_47_43-17.gif" alt="TASK_B – POLICY_A">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/octo/rollout-2024_05_28-14_47_43-17.gif" alt="TASK_B – POLICY_B">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/rt1/__vast__as20482__data__bridge__openvla_evaluation__ood__hard__visual_generalization__put_yellow_corn_on_pink_plate--with_clutter__rollout-2024_05_28-14_47_43-17__r0_len41.gif">
+                  </td>
+                </tr>
+                <tr>
+                  <th>Take grapes out of Pot</th>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/openvla/rollout-2024_05_29-09_41_48-2.gif" alt="TASK_C – POLICY_A">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/octo/rollout-2024_05_29-09_41_48-2.gif" alt="TASK_C – POLICY_B">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/bridge/rt1/__vast__as20482__data__bridge__openvla_evaluation__ood__hard__semantic_generalization__take_purple_grapes_out_of_pot__rollout-2024_05_29-09_41_48-2__r0_len41.gif" alt="TASK_C – POLICY_C">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        <div class="rollout-section-title">In-World-Model Rollouts on RT-1 Tasks</div>
+        <div class="rollout-table-wrapper">
+            <table class="rollout-table">
+              <thead>
+                <tr>
+                  <th>Task ▼ / Policy ▶</th>
+                  <th>OPENVLA-7B</th>
+                  <th>OCTO BASE-1.5</th>
+                  <th>RT-1-X</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Pick Blue Chip Bag</th>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/openvla/ep00000632.gif" alt="TASK_A – POLICY_A">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/octo/ep00000632.gif" alt="TASK_A – POLICY_B">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/rt1/ep00000632.gif" alt="TASK_A – POLICY_C">
+                  </td>
+                </tr>
+                <tr>
+                  <th>Close the drawer</th>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/openvla/ep00000213.gif" alt="TASK_B – POLICY_A">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/octo/ep00000213.gif" alt="TASK_B – POLICY_B">
+                  </td>
+                  <td class="rollout-cell">
+                    <img src="rollouts_eval_3/fractal/rt1/ep00000213.gif">
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+
+        <div class="rollout-section-title">Out of Distribution Image Rollouts</div>
+        <div class="rollout-table-wrapper">
+            <table class="rollout-table">
+                <thead>
+                        <tr>
+                        <th>Task ▼ / Policy ▶</th>
+                        <th>OPENVLA-7B</th>
+                        <th>OCTO BASE-1.5</th>
+                        <th>RT-1-X</th>
+                        </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                        <th>Pick up Carrot (With Computer on side)</th>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/openvla/rollout-2024_05_28-10_37_35-1_carrot_w_computer.gif" alt="TASK_A – POLICY_A">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/octo/rollout-2024_05_28-10_37_35-1_carrot_w_computer.gif" alt="TASK_A – POLICY_B">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/rt1/rollout-2024_05_28-10_37_35-1_carrot_w_computer.gif" alt="TASK_A – POLICY_C">
+                        </td>
+                        </tr>
+                        <tr>
+                        <th>Pick up Orange (Replace Carrot with Radish)</th>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/openvla/rollout-2024_05_28-10_37_35-1_orange_radish.gif" alt="TASK_B – POLICY_A">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/octo/rollout-2024_05_28-10_37_35-1_orange_radish.gif" alt="TASK_B – POLICY_B">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_image/rt1/rollout-2024_05_28-10_37_35-1_orange_radish.gif">
+                        </td>
+                        </tr>
+                        <tr>
+                            <th>Pick Circle</th>
+                            <td class="rollout-cell">
+                            <img src="OOD_image/openvla/left_circle_right_square_rollout-2_pick_circle.gif" alt="TASK_B – POLICY_A">
+                            </td>
+                            <td class="rollout-cell">
+                            <img src="OOD_image/octo/left_circle_right_square_rollout-2_pick_circle.gif" alt="TASK_B – POLICY_B">
+                            </td>
+                            <td class="rollout-cell">
+                            <img src="OOD_image/rt1/left_circle_right_square_rollout-2_pick_circle.gif">
+                            </td>
+                        </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="rollout-section-title">Out of Distribution Language Instruction Rollouts</div>
+        <div class="rollout-table-wrapper">
+            <table class="rollout-table">
+                <thead>
+                        <tr>
+                        <th>Task ▼ / Policy ▶</th>
+                        <th>OPENVLA-7B</th>
+                        <th>OCTO BASE-1.5</th>
+                        <th>RT-1-X</th>
+                        </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                        <th>Put Plate On Drying Rack</th>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/openvla/rollout-2024_05_28-10_37_35-7_Plate_on_drying_rack.gif" alt="TASK_A – POLICY_A">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/octo/rollout-2024_05_28-10_37_35-7_Plate_on_drying_rack.gif" alt="TASK_A – POLICY_B">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/rt1/rollout-2024_05_28-10_37_35-7_Plate_on_drying_rack.gif" alt="TASK_A – POLICY_C">
+                        </td>
+                        </tr>
+                        <tr>
+                        <th>Move Pot With Grapes Into Drying Rack</th>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/openvla/rollout-2024_05_29-09_41_48-3_pot_and_grapes.gif" alt="TASK_B – POLICY_A">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/octo/rollout-2024_05_29-09_41_48-3_pot_and_grapes.gif" alt="TASK_B – POLICY_B">
+                        </td>
+                        <td class="rollout-cell">
+                            <img src="OOD_Language/rt1/rollout-2024_05_29-09_41_48-3_pot_and_grapes.gif">
+                        </td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+
         <div class="abstract" style="margin-top: 30px;">
             <div class="abstract-label">Citation</div>
             <p style="margin-bottom: 15px;">If you find this work useful, please cite:</p>
